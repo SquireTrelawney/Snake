@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,14 +16,14 @@ public class Panel extends JPanel {
 	Timer tm, appleTm;
 	Apple apple;
 	FileWorker fileWorker;
-	String bestScore;
-
+	String bestScore, endMessage;
+	
 	public Panel() {
 		fileWorker = new FileWorker();
 		bestScore = fileWorker.read();
 		mySnake = new Snake();
 		matrix = new int[SIZE][SIZE];
-
+		endMessage = "";
 		matrix[mySnake.myHead.x][mySnake.myHead.y] = 1;
 		JButton BStart = new JButton("Start");
 		BStart.setBounds(450, 50, 100, 50);
@@ -33,10 +34,8 @@ public class Panel extends JPanel {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				fileWorker.write(mySnake.SIZE);
 				restart();
 			}
-
 		});
 		BStart.setFocusable(false);
 		setLayout(null);
@@ -47,23 +46,22 @@ public class Panel extends JPanel {
 			public void actionPerformed(ActionEvent arg0) {
 				mySnake.move();
 				if (mySnake.myHead.x > SIZE - 1 || mySnake.myHead.x < 0 || mySnake.myHead.y > SIZE - 1
-						|| mySnake.myHead.y < 0) {
-					fileWorker.write(mySnake.SIZE);
+						|| mySnake.myHead.y < 0  || matrix[mySnake.myHead.x][mySnake.myHead.y] > 0) {
+					endMessage = "Вы проиграли!";
 					tm.stop();
-				} else if (matrix[mySnake.myHead.x][mySnake.myHead.y] > 0) {
-					fileWorker.write(mySnake.SIZE);
+				} else if (mySnake.SIZE >= 100) {
+					endMessage = "Вы победили!!!";
 					tm.stop();
 				} else {
 					if (matrix[mySnake.myHead.x][mySnake.myHead.y] < 0) {
 						mySnake.SIZE = mySnake.SIZE - matrix[mySnake.myHead.x][mySnake.myHead.y];
+						updateBestScore();
 					}
-
 					matrix[mySnake.myHead.x][mySnake.myHead.y] = 1;
-					repaint();
+					
 				}
-
+				repaint();
 			}
-
 		});
 		tm.start();
 
@@ -71,10 +69,10 @@ public class Panel extends JPanel {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				apple = new Apple();
+				do {
+					apple = new Apple();		
+				}while(matrix[apple.x][apple.y] != 0 && mySnake.SIZE < 100);
 				matrix[apple.x][apple.y] = apple.SIZE;
-
 			}
 		});
 		appleTm.start();
@@ -111,12 +109,11 @@ public class Panel extends JPanel {
 			}
 
 		}
-		if(Integer.parseInt(bestScore) > mySnake.SIZE) {
-			g.drawString("Лучший счёт: " + bestScore, 10, 10);
-		}else {
-			g.drawString("Лучший счёт: " + mySnake.SIZE, 10, 10);
-		}
+		g.setColor(Color.BLACK);
+		g.drawString("Лучший счёт: " + bestScore, 10, 10);
+		g.drawString(endMessage, 450, 150);
 		
+
 	}
 
 	public void restart() {
@@ -128,9 +125,17 @@ public class Panel extends JPanel {
 		mySnake.SIZE = 3;
 		mySnake.myHead.x = 5;
 		mySnake.myHead.y = 5;
+		endMessage = "";
 		repaint();
 		tm.restart();
 		appleTm.restart();
+	}
+
+	public void updateBestScore() {
+		if (mySnake.SIZE > Integer.parseInt(bestScore)) {
+			fileWorker.write(mySnake.SIZE);
+			bestScore = String.valueOf(mySnake.SIZE);
+		}
 	}
 
 }
